@@ -10,7 +10,6 @@ namespace Bangazon
     {
         public int paymentTypeId { get; set; }
         public string name { get; set; }
-        public string account { get; set; }
 
         // constructor
         public PaymentType(int paymentTypeId, string name)

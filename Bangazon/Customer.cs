@@ -8,6 +8,7 @@ namespace Bangazon
 {
     public class Customer
     {
+        public int listIndex { get; set; }
         public string CustomerId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
@@ -19,8 +20,9 @@ namespace Bangazon
         public string Phone { get; set; }
 
         // constructor
-        public Customer(string CustomerId, string FirstName, string LastName, string Address1, string Address2, string City, string State, string Zip, string Phone)
+        public Customer(int listIndex, string CustomerId, string FirstName, string LastName, string Address1, string Address2, string City, string State, string Zip, string Phone)
         {
+            this.listIndex = listIndex;
             this.CustomerId = CustomerId;
             this.FirstName = FirstName;
             this.LastName = LastName;
