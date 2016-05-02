@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data.SqlClient;
 
 namespace Bangazon
 {
@@ -11,7 +12,6 @@ namespace Bangazon
         static void Main()
         {
             List<string> customer = new List<string>();
-            customer.Add("Porky Pig");
 
             List<string> lineItems = new List<string>();
 
@@ -57,31 +57,92 @@ namespace Bangazon
                     command.Append("'" + zip + "',");
                     command.Append("'" + phone + "'");
                     command.Append(")");
-                    Console.WriteLine("Built string: " + command);
                     doSql(command.ToString());
-                    Console.WriteLine("should've worked");
-
                     break;
                 case "2":
+                    List<Customer> customerList = new List<Customer>();
                     Console.WriteLine("Which customer?");
-                    int i = 0;
-                    foreach (string c in customer)
+                    string query = @"
+SELECT
+  c.CustomerId,c.FirstName,c.LastName,c.Address1,c.Address2,c.City,c.State,c.ZipCode,c.Phone
+FROM Customer c
+";
+
+                    using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                    using (SqlCommand cmd = new SqlCommand(query, connection))
                     {
-                        Console.WriteLine("{0}. {1}", i + 1, customer[i]);
-                        i++;
+                        connection.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            // Check if the reader has any rows at all before starting to read.
+                            if (reader.HasRows)
+                            {
+                                // Read advances to the next row.
+                                while (reader.Read())
+                                {
+                                    customerList.Add(new Customer(reader[0].ToString(),reader[1].ToString(),reader[2].ToString(),reader[3].ToString(),reader[4].ToString(),reader[5].ToString(),reader[6].ToString(),reader[7].ToString(),reader[8].ToString()));
+                                    // customer.Add(reader[0],reader[1],reader[2],reader[3],reader[4],reader[5],reader[6],reader[7],reader[8]);
+                                }
+
+                            }
+                        }
+                    }
+                    foreach (Customer c in customerList)
+                    {
+                        Console.WriteLine("{0} {1} {2}", c.CustomerId, c.FirstName, c.LastName);
                     }
                     Console.Write("> ");
-                    string customerChosen = Console.ReadLine();
-                    Console.Write("\nEnter payment type (e.g. AmEx, VISA, Checking)\n> ");
-                    string paymentChosen = Console.ReadLine();
-                    Console.Write("\nEnter account number\n> ");
-                    string accountChosen = Console.ReadLine();
+                    string customerIdChosen = Console.ReadLine();
+
+                    List<PaymentType> paymentTypeList = new List<PaymentType>();
+                    Console.Write("\nEnter payment type:\n");
+                    string query2 = @"
+SELECT
+  pt.paymentTypeId, pt.name
+FROM PaymentType pt
+";
+
+                    using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                    using (SqlCommand cmd = new SqlCommand(query2, connection))
+                    {
+                        connection.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            // Check if the reader has any rows at all before starting to read.
+                            if (reader.HasRows)
+                            {
+                                // Read advances to the next row.
+                                while (reader.Read())
+                                {
+                                    paymentTypeList.Add(new PaymentType(reader[0] as int? ?? 0,reader[1] as string));
+                                    // customer.Add(reader[0],reader[1],reader[2],reader[3],reader[4],reader[5],reader[6],reader[7],reader[8]);
+                                }
+
+                            }
+                        }
+                    }
+                    foreach (PaymentType pt in paymentTypeList)
+                    {
+                        Console.WriteLine("{0}. {1}", pt.paymentTypeId, pt.name);
+                    }
+                    Console.Write("> ");
+                    string paymentTypeChosen = Console.ReadLine();
+                    Console.Write("\nEnter account number:\n> ");
+                    string account = Console.ReadLine();
+
+                    StringBuilder command2 = new StringBuilder();
+                    command2.Append("UPDATE Customer");
+                    command2.Append(" SET PaymentTypeId = " + paymentTypeChosen + ",");
+                    command2.Append(" Account = '" + account + "'");
+                    command2.Append(" WHERE CustomerId = '" + customerIdChosen +"'");
+                    Console.WriteLine("Built string: " + command2.ToString());
+                    doSql(command2.ToString());
                     break;
                 case "3":
                     List<string> product = new List<string>();
                     product.Add("Fabspeed exhaust header");
                     product.Add("Alcantara sport steering wheel");
-                    product.Add("ShupacTech performance air filter");
+                    product.Add("ShupacTech high-flow air filter");
                     product.Add("Back to main menu");
                     int j = 0;
                     foreach (string p in product)
