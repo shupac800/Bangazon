@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
+using System.Text.RegularExpressions;
 
 namespace Bangazon
 {
@@ -187,5 +188,39 @@ namespace Bangazon
             }
         }
 
+        public static List<string> getPopularProducts(List<Product> productList)
+        {
+            // for each product, report how many were sold and how many customers bought it
+            List<string> report = new List<string>();
+            foreach (Product p in productList)
+            {
+                string query7 = @"SELECT COUNT(DISTINCT y.foo) as customers, count(y.bar) as units
+    FROM (SELECT i.customerId as foo, li.productId as bar from Invoices i 
+    INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + p.productId + "') y";
+                using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                using (SqlCommand cmd = new SqlCommand(query7, connection))
+                {
+                    connection.Open();
+                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        // Check if the reader has any rows at all before starting to read.
+                        if (reader.HasRows)
+                        {
+                            // Read advances to the next row.
+                            while (reader.Read())
+                            {
+                                int customersWhoBought = reader[0] as int? ?? 0;
+                                int unitsSold = reader[1] as int? ?? 0;
+                                var regex = new Regex("[ ]+$");  // for eliminating trailing white space
+                                string reportLine = String.Format("{0} ordered {1} times by {2} customers for total revenue of ${3:0.00}", regex.Replace(p.name,""), unitsSold, customersWhoBought, unitsSold * p.price);
+                                report.Add(reportLine);
+                            }
+                        }
+                    }
+                    connection.Close();
+                }
+            }
+            return report;
+        }
     }
 }
