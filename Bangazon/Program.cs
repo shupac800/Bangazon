@@ -136,8 +136,8 @@ namespace Bangazon
                 case "4":
                     if (lineItems.Count == 0)
                     {
-                        Console.WriteLine("Please add some products to your order first. Press any key to return to main menu.");
-                        int foo = Console.Read();
+                        Console.WriteLine("Please add some products to your order first. Press enter to return to main menu.");
+                        Console.ReadLine();
                         goto Main;
                     }
                     decimal totalPrice = 0;
@@ -232,7 +232,7 @@ namespace Bangazon
                     lineItems = new List<Product>(); // clear lineItems list
                     goto Main;
                 case "5":
-                    // load products
+                    // load products from database into list
                     List<Product> productList2 = new List<Product>();
                     Console.WriteLine("** Product Popularity **");
                     string query6 = @"SELECT p.productId, p.name, p.price FROM Product p";
@@ -256,13 +256,14 @@ namespace Bangazon
                             }
                         }
                     }
-                    // for each product, count how many customers bought it
-                    List<int> numCustomersWhoBought = new List<int>();
+                    // for each product, report how many were sold and how many customers bought it
                     foreach (Product p in productList2)
                     {
-                        string query8 = @"SELECT COUNT(DISTINCT i.customerId) from Invoices i INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + p.productId + "'";
+                        string query7 = @"SELECT COUNT(DISTINCT y.foo) as customers, count(y.bar) as units
+FROM (SELECT i.customerId as foo, li.productId as bar from Invoices i 
+INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + p.productId + "') y";
                         using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
-                        using (SqlCommand cmd = new SqlCommand(query8, connection))
+                        using (SqlCommand cmd = new SqlCommand(query7, connection))
                         {
                             connection.Open();
                             using (SqlDataReader reader = cmd.ExecuteReader())
@@ -273,44 +274,16 @@ namespace Bangazon
                                     // Read advances to the next row.
                                     while (reader.Read())
                                     {
-                                        numCustomersWhoBought.Add(reader[0] as int? ?? 0);
+                                        int customersWhoBought = reader[0] as int? ?? 0;
+                                        int unitsSold = reader[1] as int? ?? 0;
+                                        Console.WriteLine("{0} ordered {1} times by {2} customers for total revenue of ${3:0.00}", p.name, unitsSold, customersWhoBought, unitsSold * p.price);
                                     }
                                 }
                             }
                         }
                     }
-                    // for each product, count how many were sold
-                    List<int> numItemsSold = new List<int>();
-                    foreach (Product p in productList2)
-                    {
-                        string query8 = @"SELECT COUNT(li.productId) from LineItems li WHERE li.productId = '" + p.productId + "'";
-                        using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
-                        using (SqlCommand cmd = new SqlCommand(query8, connection))
-                        {
-                            connection.Open();
-                            using (SqlDataReader reader = cmd.ExecuteReader())
-                            {
-                                // Check if the reader has any rows at all before starting to read.
-                                if (reader.HasRows)
-                                {
-                                    // Read advances to the next row.
-                                    while (reader.Read())
-                                    {
-                                        numItemsSold.Add(reader[0] as int? ?? 0);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // display results
-                    int ix = 0;
-                    foreach (Product p in productList2)
-                    {
-                        Console.WriteLine("{0} ordered {1} times by {2} customers for total revenue of ${3:0.00}",p.name,numItemsSold[ix],numCustomersWhoBought[ix],numItemsSold[ix]*p.price);
-                        ix++;
-                    }
-                    Console.WriteLine("Press any key to return to main menu.");
-                    int bar = Console.Read();
+                    Console.WriteLine("Press enter to return to main menu.");
+                    Console.ReadLine();
                     goto Main;
                 case "6":
                     Console.WriteLine("See ya");
@@ -319,8 +292,8 @@ namespace Bangazon
                     break;
             }
             goto Main;
-        End:
-        byte dummy = 0;  // have to have something after "End" label
+            End:
+            byte dummy = 0;  // have to have something after "End" label
         }
 
         static void doSqlNonQuery(string command)
