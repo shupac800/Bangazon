@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bangazon
 {
-    public class MainMenu
+    public class MenuOptions
     {
         public static List<Customer> AddCustomer()
         {
@@ -40,13 +40,12 @@ namespace Bangazon
             command.Append(")");
 
             DatabaseOps.executeNonQuery(command.ToString());  // do SQL INSERT
-
+            Console.WriteLine("Added new customer");
             return DatabaseOps.loadCustomers();  // return list that includes newly added customer
         }
 
-        public static void AddPaymentType()
+        public static void AddPaymentType(List<Customer> customerList)
         {
-            List<Customer> customerList = DatabaseOps.loadCustomers();
             Console.WriteLine("Which customer?");
             // better: instead of loop, use LINQ to create display list
             List<string> displayList = new List<string>();
@@ -79,6 +78,7 @@ namespace Bangazon
             command.Append("VALUES ('" + customerIdChosen + "', " + paymentTypeIdChosen + ", '" + account + "')");
 
             DatabaseOps.executeNonQuery(command.ToString());  // do SQL INSERT
+            Console.WriteLine("Added payment type");
         }
 
         public static List<Product> ChooseProducts(List<Product> productList, List<Product> lineItems)
@@ -96,12 +96,19 @@ namespace Bangazon
             int productIndexChosen = IO.getChoice();
             if (productIndexChosen == 8) return lineItems;
             lineItems.Add(productList[productIndexChosen]);
-            Console.WriteLine("Added product index {0}: {1}", productIndexChosen + 1, productList[productIndexChosen].name);
+            Console.WriteLine("Added line item: {0}", productList[productIndexChosen].name);
             goto PickAProduct;
         }
 
         public static List<Product> CloseOrder(List<Product> lineItems, List<Customer> customerList)
         {
+            if (lineItems.Count == 0)
+            {
+                Console.WriteLine("Please add some products to your order first. Press enter to return to main menu.");
+                Console.ReadLine();
+                return lineItems;
+            }
+
             decimal totalPrice = 0;
             foreach (Product p in lineItems)
             {
@@ -115,10 +122,6 @@ namespace Bangazon
             // get customerId
             Console.WriteLine("\nWhich customer is placing the order?");
             // better: instead of loop, use LINQ to create display list
-            if (customerList.Count == 0)
-            {
-                Console.WriteLine("Nobody in customerList!");
-            }
             List<string> displayListC = new List<string>();
             foreach (Customer c in customerList)
             {
@@ -141,11 +144,22 @@ namespace Bangazon
             int paymentTypeIndexChosen = IO.getChoice();
             int paymentTypeIdChosen = paymentTypesAvailable[paymentTypeIndexChosen].paymentTypeId;
 
-            Console.WriteLine("Creating order...");
             DatabaseOps.createOrder(customerIdChosen, paymentTypeIdChosen, lineItems);
             Console.WriteLine("Invoice added.\n");
             lineItems = new List<Product>(); // clear lineItems list
             return lineItems;
+        }
+
+        public static void ReportPopularProducts(List<Product> productList)
+        {
+            Console.WriteLine("\n** Product Popularity and Revenue **\n");
+            List<string> report = DatabaseOps.getPopularProducts(productList);
+            foreach (string s in report)
+            {
+                Console.WriteLine(s);
+            }
+            Console.WriteLine("\nPress enter to return to main menu.");
+            Console.ReadLine();
         }
     }
 }
