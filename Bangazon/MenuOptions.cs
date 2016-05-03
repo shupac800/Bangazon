@@ -44,9 +44,8 @@ namespace Bangazon
             return DatabaseOps.loadCustomers();  // return list that includes newly added customer
         }
 
-        public static void AddPaymentType()
+        public static void AddPaymentType(List<Customer> customerList)
         {
-            List<Customer> customerList = DatabaseOps.loadCustomers();
             Console.WriteLine("Which customer?");
             // better: instead of loop, use LINQ to create display list
             List<string> displayList = new List<string>();
@@ -97,7 +96,7 @@ namespace Bangazon
             int productIndexChosen = IO.getChoice();
             if (productIndexChosen == 8) return lineItems;
             lineItems.Add(productList[productIndexChosen]);
-            Console.WriteLine("Added product index {0}: {1}", productIndexChosen + 1, productList[productIndexChosen].name);
+            Console.WriteLine("Added line item: {0}", productList[productIndexChosen].name);
             goto PickAProduct;
         }
 

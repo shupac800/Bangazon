@@ -32,7 +32,7 @@ namespace Bangazon
                     customerList = MenuOptions.AddCustomer();
                     break;
                 case 1:
-                    MenuOptions.AddPaymentType();
+                    MenuOptions.AddPaymentType(customerList);
                     break;
                 case 2:
                     lineItems = MenuOptions.ChooseProducts(productList, lineItems);

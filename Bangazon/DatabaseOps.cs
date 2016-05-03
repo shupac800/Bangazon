@@ -194,11 +194,11 @@ namespace Bangazon
             List<string> report = new List<string>();
             foreach (Product p in productList)
             {
-                string query7 = @"SELECT COUNT(DISTINCT y.foo) as customers, count(y.bar) as units
+                string query = @"SELECT COUNT(DISTINCT y.foo) as customers, count(y.bar) as units
     FROM (SELECT i.customerId as foo, li.productId as bar from Invoices i 
     INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + p.productId + "') y";
                 using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
-                using (SqlCommand cmd = new SqlCommand(query7, connection))
+                using (SqlCommand cmd = new SqlCommand(query, connection))
                 {
                     connection.Open();
                     using (SqlDataReader reader = cmd.ExecuteReader())
