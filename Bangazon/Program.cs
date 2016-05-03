@@ -95,9 +95,10 @@ namespace Bangazon
 
                     StringBuilder command2 = new StringBuilder();
                     command2.Append("INSERT INTO PaymentTypesAvailable ");
-                    command2.Append("(customerId, paymentType, account) ");
+                    command2.Append("(customerId, paymentTypeId, account) ");
                     command2.Append("VALUES ('" + customerIdChosen + "', " + paymentTypeChosen + ", '" + account + "')");
                     doSqlNonQuery(command2.ToString());
+                    Console.WriteLine("Added payment type");
                     break;
                 case "3":
                     ChooseProduct:
@@ -127,8 +128,8 @@ namespace Bangazon
                     }
                     Console.WriteLine("9. Back to Main Menu");
                     Console.Write("> ");
-                    int productIndexChosen = Int32.Parse(Console.ReadLine());
-                    if (productIndexChosen == 9) break;
+                    int productIndexChosen = Int32.Parse(Console.ReadLine()) - 1;
+                    if (productIndexChosen == 8) break;
                     lineItems.Add(productList[productIndexChosen]);
                     Console.WriteLine("Added product index {0} {1}", productIndexChosen, productList[productIndexChosen].name);
                     goto ChooseProduct;
@@ -139,7 +140,6 @@ namespace Bangazon
                         int foo = Console.Read();
                         goto Main;
                     }
-                    // complete order
                     decimal totalPrice = 0;
                     foreach (Product p in lineItems)
                     {
@@ -157,12 +157,36 @@ namespace Bangazon
                     string customerIdChosen2 = customerList2[customerIndexChosen2].CustomerId;
 
                     // get payment type
+                    List<PaymentType> paymentTypeList2 = new List<PaymentType>();
+                    Console.WriteLine("Which payment type?");
+                    string query5 = @"SELECT pt.paymentTypeId, pt.name FROM PaymentType pt INNER JOIN PaymentTypesAvailable pta ON pta.paymentTypeId = pt.paymentTypeId WHERE pta.customerId = '" + customerIdChosen2 + "'";
+                    using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                    using (SqlCommand cmd = new SqlCommand(query5, connection))
+                    {
+                        connection.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            // Check if the reader has any rows at all before starting to read.
+                            if (reader.HasRows)
+                            {
+                                // Read advances to the next row.
+                                while (reader.Read())
+                                {
+                                    PaymentType pt = new PaymentType(reader[0] as int? ??  0, reader[1] as string);
+                                    paymentTypeList2.Add(pt);
+                                    Console.WriteLine("{0}. {1}", pt.paymentTypeId, pt.name);
+                                }
+                            }
+                        }
+                    }
+                    Console.Write("> ");
+                    int paymentTypeChosen2 = Int32.Parse(Console.ReadLine());
 
                     Console.WriteLine("Creating order...");
 
                     // determine next Invoice ID number
-                    int maxInvoiceId = 0;
-                    string query4 = @"SELECT MAX invoiceId FROM Invoices";
+                    int maxInvoiceId = 1000;  // if no invoices in Invoice table, start at 1000
+                    string query4 = @"SELECT MAX(invoiceId) FROM Invoices";
                     using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
                     using (SqlCommand cmd = new SqlCommand(query4, connection))
                     {
@@ -184,10 +208,11 @@ namespace Bangazon
                     // add new row to Invoices table
                     StringBuilder command5 = new StringBuilder();
                     command5.Append("INSERT INTO Invoices ");
-                    command5.Append("(invoiceId, customerId) ");
+                    command5.Append("(invoiceId, customerId, paymentTypeId) ");
                     command5.Append("VALUES (");
                     command5.Append((maxInvoiceId + 1 ).ToString() + ", ");
-                    command5.Append(customerIdChosen2.ToString());
+                    command5.Append("'" + customerIdChosen2 + "', ");
+                    command5.Append(paymentTypeChosen2.ToString());
                     command5.Append(")");
                     doSqlNonQuery(command5.ToString());
 
@@ -203,21 +228,102 @@ namespace Bangazon
                         command4.Append(")");
                         doSqlNonQuery(command4.ToString());
                     }
-                    Console.WriteLine("Invoice added.");
-                    break;
+                    Console.WriteLine("Invoice added.\n");
+                    lineItems = new List<Product>(); // clear lineItems list
+                    goto Main;
                 case "5":
-                    Console.WriteLine("Not yet implemented");
-                    break;
+                    // load products
+                    List<Product> productList2 = new List<Product>();
+                    Console.WriteLine("** Product Popularity **");
+                    string query6 = @"SELECT p.productId, p.name, p.price FROM Product p";
+                    using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                    using (SqlCommand cmd = new SqlCommand(query6, connection))
+                    {
+                        connection.Open();
+                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            // Check if the reader has any rows at all before starting to read.
+                            if (reader.HasRows)
+                            {
+                                // Read advances to the next row.
+                                int index = 0;
+                                while (reader.Read())
+                                {
+                                    Product p = new Product(index, reader[0] as int? ?? 0, reader[1] as string, reader[2] as decimal? ?? 0);
+                                    productList2.Add(p);
+                                    index++;
+                                }
+                            }
+                        }
+                    }
+                    // for each product, count how many customers bought it
+                    List<int> numCustomersWhoBought = new List<int>();
+                    foreach (Product p in productList2)
+                    {
+                        string query8 = @"SELECT COUNT(DISTINCT i.customerId) from Invoices i INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + p.productId + "'";
+                        using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                        using (SqlCommand cmd = new SqlCommand(query8, connection))
+                        {
+                            connection.Open();
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                // Check if the reader has any rows at all before starting to read.
+                                if (reader.HasRows)
+                                {
+                                    // Read advances to the next row.
+                                    while (reader.Read())
+                                    {
+                                        numCustomersWhoBought.Add(reader[0] as int? ?? 0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // for each product, count how many were sold
+                    List<int> numItemsSold = new List<int>();
+                    foreach (Product p in productList2)
+                    {
+                        string query8 = @"SELECT COUNT(li.productId) from LineItems li WHERE li.productId = '" + p.productId + "'";
+                        using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
+                        using (SqlCommand cmd = new SqlCommand(query8, connection))
+                        {
+                            connection.Open();
+                            using (SqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                // Check if the reader has any rows at all before starting to read.
+                                if (reader.HasRows)
+                                {
+                                    // Read advances to the next row.
+                                    while (reader.Read())
+                                    {
+                                        numItemsSold.Add(reader[0] as int? ?? 0);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    // display results
+                    int ix = 0;
+                    foreach (Product p in productList2)
+                    {
+                        Console.WriteLine("{0} ordered {1} times by {2} customers for total revenue of ${3:0.00}",p.name,numItemsSold[ix],numCustomersWhoBought[ix],numItemsSold[ix]*p.price);
+                        ix++;
+                    }
+                    Console.WriteLine("Press any key to return to main menu.");
+                    int bar = Console.Read();
+                    goto Main;
                 case "6":
                     Console.WriteLine("See ya");
-                    break;
+                    goto End;
                 default:
                     break;
             }
             goto Main;
+        End:
+        byte dummy = 0;  // have to have something after "End" label
         }
 
-        static int doSqlNonQuery(string command)
+        static void doSqlNonQuery(string command)
         {
             System.Data.SqlClient.SqlConnection sqlConnection1 =
                 new System.Data.SqlClient.SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True");
@@ -230,8 +336,6 @@ namespace Bangazon
             sqlConnection1.Open();
             cmd.ExecuteNonQuery();
             sqlConnection1.Close();
-
-            return 0;
         }
 
         static List<Customer> loadCustomerList()
@@ -258,7 +362,6 @@ namespace Bangazon
                     }
                 }
             }
-
             return customerList;
         }
 
@@ -266,11 +369,11 @@ namespace Bangazon
         { 
             foreach (Customer c in customerList)
             {
-                Console.WriteLine("{0} {1} {2}", c.listIndex, c.FirstName, c.LastName);
+                Console.WriteLine("{0}. {1} {2}", c.listIndex + 1, c.FirstName, c.LastName);
             }
             Console.Write("> ");
             string customerIndexChosen = Console.ReadLine();
-            return Int32.Parse(customerIndexChosen);
+            return Int32.Parse(customerIndexChosen) - 1;
         }
     }
 }
