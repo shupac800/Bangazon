@@ -16,7 +16,7 @@ namespace Bangazon
             List<Product> lineItems = new List<Product>();
 
             Main:
-            Console.WriteLine("******************************************************");
+            Console.WriteLine("\n******************************************************");
             Console.WriteLine("** Welcome to Bangazon Command Line Ordering System **");
             Console.WriteLine("******************************************************");
             List<string> displayList = new List<string>
@@ -26,8 +26,8 @@ namespace Bangazon
                   "Complete an Order",
                   "See Product Popularity",
                   "Leave Bangazon" };
-            InputOutput.displayMenu(displayList);
-            switch (InputOutput.getChoice())
+            IO.displayMenu(displayList);
+            switch (IO.getChoice())
             {
                 case 0:
                     customerList = MainMenu.AddCustomer();
@@ -74,6 +74,7 @@ INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + 
                                     }
                                 }
                             }
+                            connection.Close();
                         }
                     }
                     Console.WriteLine("Press enter to return to main menu.");
@@ -88,46 +89,6 @@ INNER JOIN LineItems li ON li.invoiceId = i.invoiceId WHERE li.productId = '" + 
             goto Main;
             End:
             byte dummy = 0;  // have to have something after "End" label
-        }
-
-
-
-        static List<Customer> loadCustomerList()
-        {
-            List<Customer> customerList = new List<Customer>();
-
-            string query = @"SELECT c.CustomerId,c.FirstName,c.LastName,c.Address1,c.Address2,c.City,c.State,c.ZipCode,c.Phone FROM Customer c";
-            using (SqlConnection connection = new SqlConnection("Data Source=(LocalDB)\\MSSQLLocalDB; AttachDbFilename=\"C:\\Users\\shu\\workspace\\cs\\Bangazon\\Bangazon\\Bangazon.mdf\"; Integrated Security= True"))
-            using (SqlCommand cmd = new SqlCommand(query, connection))
-            {
-                connection.Open();
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    // Check if the reader has any rows at all before starting to read.
-                    if (reader.HasRows)
-                    {
-                        // Read advances to the next row.
-                        int index = 0;
-                        while (reader.Read())
-                        {
-                            customerList.Add(new Customer(index, reader[0] as string, reader[1] as string, reader[2] as string, reader[3] as string, reader[4] as string, reader[5] as string, reader[6] as string, reader[7] as string, reader[8] as string));
-                            index++;
-                        }
-                    }
-                }
-            }
-            return customerList;
-        }
-
-        static int dispAndInputCustomerList(List<Customer> customerList)
-        { 
-            foreach (Customer c in customerList)
-            {
-                Console.WriteLine("{0}. {1} {2}", c.listIndex + 1, c.FirstName, c.LastName);
-            }
-            Console.Write("> ");
-            string customerIndexChosen = Console.ReadLine();
-            return Int32.Parse(customerIndexChosen) - 1;
         }
     }
 }

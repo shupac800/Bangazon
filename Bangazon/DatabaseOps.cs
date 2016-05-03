@@ -24,6 +24,7 @@ namespace Bangazon
         }
 
         public static List<Customer> loadCustomers()
+        // return list of all customers in DB
         {
             List<Customer> customerList = new List<Customer>();
             string query = @"SELECT c.CustomerId,c.FirstName,c.LastName,c.Address1,c.Address2,c.City,c.State,c.ZipCode,c.Phone FROM Customer c";
@@ -51,6 +52,7 @@ namespace Bangazon
         }
 
         public static List<Product> loadProducts()
+        // return list of all products in DB
         {
             List<Product> productList = new List<Product>();
             string query = @"SELECT p.productId, p.name, p.price FROM Product p";
@@ -78,6 +80,7 @@ namespace Bangazon
         }
 
         public static List<PaymentType> loadPaymentTypes()
+        // return list of all payment types in DB
         {
             List<PaymentType> paymentTypeList = new List<PaymentType>();
             string query = @"SELECT pt.paymentTypeId, pt.name FROM PaymentType pt";
@@ -105,6 +108,7 @@ namespace Bangazon
         }
 
         public static List<PaymentType> loadPaymentTypesAvailable(string customerId)
+        // return list of payment types available for this customer
         {
             List<PaymentType> paymentTypesAvailable = new List<PaymentType>();
             string query = @"SELECT pt.paymentTypeId, pt.name FROM PaymentType pt INNER JOIN PaymentTypesAvailable pta ON pta.paymentTypeId = pt.paymentTypeId WHERE pta.customerId = '" + customerId + "'";
@@ -132,8 +136,12 @@ namespace Bangazon
         }
 
         public static void createOrder(string customerId, int paymentTypeId, List<Product> lineItems)
+        // this does the database updates associated with MainMenu.CloseOrder
         {
             // determine next Invoice ID number
+            // better way to do this would be to define ID field as IDENTITY(1000,1)
+            // and have it filled serially, automatically
+            // but since the table has already been created and populated, we'll do it the long way
             int maxInvoiceId = 1000; // use 1000 if Invoices table is empty
             string query = @"SELECT MAX(invoiceId) FROM Invoices";
             using (SqlConnection connection = new SqlConnection(connectionString))
@@ -145,7 +153,6 @@ namespace Bangazon
                     if (r.HasRows)
                     {
                         // Read advances to the next row.
-                        int index = 0;
                         while (r.Read())
                         {
                             maxInvoiceId = r[0] as int? ?? 0;

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Bangazon
 {
-    public class InputOutput
+    public class IO
     {
         public static void displayMenu(List<string> linesToDisplay)
         {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Bangazon;
 
 namespace Bangazon
 {
@@ -40,7 +39,7 @@ namespace Bangazon
             command.Append("'" + phone + "'");
             command.Append(")");
 
-            DatabaseOps.executeNonQuery(command.ToString());
+            DatabaseOps.executeNonQuery(command.ToString());  // do SQL INSERT
 
             return DatabaseOps.loadCustomers();  // return list that includes newly added customer
         }
@@ -55,19 +54,20 @@ namespace Bangazon
             {
                 displayList.Add(c.FirstName + c.LastName);
             }
-            InputOutput.displayMenu(displayList);
-            int customerIndexChosen = InputOutput.getChoice();
+            IO.displayMenu(displayList);
+            int customerIndexChosen = IO.getChoice();
             string customerIdChosen = customerList[customerIndexChosen].CustomerId;
 
             List<PaymentType> paymentTypeList = DatabaseOps.loadPaymentTypes();
             Console.Write("\nEnter payment type:\n");
+            // better: instead of loop, use LINQ to create display list
             displayList = new List<String>();
             foreach (PaymentType pt in paymentTypeList)
             {
                 displayList.Add(pt.name);
             }
-            InputOutput.displayMenu(displayList);
-            int paymentTypeIndexChosen = InputOutput.getChoice();
+            IO.displayMenu(displayList);
+            int paymentTypeIndexChosen = IO.getChoice();
             int paymentTypeIdChosen = paymentTypeList[paymentTypeIndexChosen].paymentTypeId;
 
             Console.Write("\nEnter account number:\n> ");
@@ -78,7 +78,7 @@ namespace Bangazon
             command.Append("(customerId, paymentTypeId, account) ");
             command.Append("VALUES ('" + customerIdChosen + "', " + paymentTypeIdChosen + ", '" + account + "')");
 
-            DatabaseOps.executeNonQuery(command.ToString());
+            DatabaseOps.executeNonQuery(command.ToString());  // do SQL INSERT
         }
 
         public static List<Product> ChooseProducts(List<Product> productList, List<Product> lineItems)
@@ -91,9 +91,9 @@ namespace Bangazon
             {
                 displayList.Add(p.name);
             }
-            InputOutput.displayMenu(displayList);
+            IO.displayMenu(displayList);
             Console.WriteLine("9. Back to Main Menu");
-            int productIndexChosen = InputOutput.getChoice();
+            int productIndexChosen = IO.getChoice();
             if (productIndexChosen == 8) return lineItems;
             lineItems.Add(productList[productIndexChosen]);
             Console.WriteLine("Added product index {0}: {1}", productIndexChosen + 1, productList[productIndexChosen].name);
@@ -124,8 +124,8 @@ namespace Bangazon
             {
                 displayListC.Add(c.FirstName + c.LastName);
             }
-            InputOutput.displayMenu(displayListC);
-            int customerIndexChosen = InputOutput.getChoice();
+            IO.displayMenu(displayListC);
+            int customerIndexChosen = IO.getChoice();
             string customerIdChosen = customerList[customerIndexChosen].CustomerId;
 
             // get paymentTypes available for this customer
@@ -137,8 +137,8 @@ namespace Bangazon
             {
                 displayListPTA.Add(pt.name);
             }
-            InputOutput.displayMenu(displayListPTA);
-            int paymentTypeIndexChosen = InputOutput.getChoice();
+            IO.displayMenu(displayListPTA);
+            int paymentTypeIndexChosen = IO.getChoice();
             int paymentTypeIdChosen = paymentTypesAvailable[paymentTypeIndexChosen].paymentTypeId;
 
             Console.WriteLine("Creating order...");
@@ -147,6 +147,5 @@ namespace Bangazon
             lineItems = new List<Product>(); // clear lineItems list
             return lineItems;
         }
-
     }
 }
